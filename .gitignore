@@ -7,6 +7,9 @@ __pycache__/
 .venv/
 *.egg-info/
 
+# Alembic
+*.pyc
+
 # IDE
 .idea/
 .vscode/
