@@ -30,7 +30,7 @@ DocuQuery is a multi-tenant SaaS platform that enables organizations to:
 2. **Production-ready architecture**: Not over-engineered, but includes essential production patterns (monitoring, error handling, testing)
 3. **Completable in timeline**: MVP in 7-10 days, full showcase in 14-21 days
 4. **Conversation starter**: Each architectural decision has a defensible rationale
-5. **Cost-effective**: Runs on <$50/month, can be torn down between interviews
+5. **Cost-effective**: Runs on <$50/month
 
 ---
 
@@ -413,7 +413,7 @@ Milestones:
 - ✅ Deployed to AWS (ECS/EC2)
 
 ### Phase 3: Polish & Documentation (Week 3) - Days 15-21
-**Goal**: Interview-ready showcase
+**Goal**: Showcase
 
 Milestones:
 - ✅ Monitoring stack (Prometheus, Grafana, OpenTelemetry)
@@ -441,7 +441,7 @@ Milestones:
 **Mitigation**:
 - Use AWS Free Tier religiously
 - Set billing alerts at $20, $50, $100
-- Tear down after demo/interviews
+- Tear down after demo
 - Document infrastructure to rebuild easily
 
 ### Risk 3: LLM API Availability/Cost
