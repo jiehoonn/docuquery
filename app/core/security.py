@@ -1,4 +1,4 @@
-from passlib.hash import bcrypt
+import bcrypt as bcrypt_lib
 from jose import jwt, JWTError
 import datetime
 from datetime import UTC, timedelta
@@ -10,11 +10,13 @@ from app.core.config import settings
 
 # Password Hashing (passlib with bcrypt)
 def hash_password(password: str) -> str:
-    hashed = bcrypt.hash(password)
-    return hashed
+    password_bytes = password.encode('utf-8')
+    salt = bcrypt_lib.gensalt(rounds=12)
+    hashed = bcrypt_lib.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return bcrypt.verify(plain, hashed)
+    return bcrypt_lib.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
 
 # JWT Tokens (python-jose)
 SECRET_KEY = settings.jwt_secret
