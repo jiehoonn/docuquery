@@ -1,20 +1,59 @@
+"""
+app/main.py - FastAPI Application Entry Point
+
+This is the main entry point for the DocuQuery API. It creates the FastAPI
+application instance and configures all the routes (endpoints) that the API
+will respond to.
+
+To run this application:
+    poetry run uvicorn app.main:app --reload
+
+The app will be available at http://localhost:8000
+API documentation is auto-generated at http://localhost:8000/docs
+"""
+
 from fastapi import FastAPI
+
+# Import the auth router which contains all authentication-related endpoints
+# We rename it to 'auth_router' for clarity when registering it below
 from app.api.v1.auth import router as auth_router
 
-app = FastAPI()
+# Create the FastAPI application instance
+# This is the main object that handles all incoming HTTP requests
+app = FastAPI(
+    title="DocuQuery API",
+    description="Multi-tenant document Q&A platform powered by RAG",
+    version="0.1.0"
+)
 
+# Register the auth router with a URL prefix
+# This means all routes in auth_router will be prefixed with "/api/v1"
+# For example, "/auth/login" becomes "/api/v1/auth/login"
 app.include_router(auth_router, prefix="/api/v1")
 
-# Root endpoint
+
 @app.get("/")
 def read_root():
-    return {
-        "Hello": "World"
-        }
+    """
+    Root endpoint - returns a simple welcome message.
+    Useful for quickly checking if the API is running.
 
-# Health check endpoint
+    Returns:
+        dict: A simple JSON response
+    """
+    return {"Hello": "World"}
+
+
 @app.get("/health")
 def health_check():
-    return {
-        "status": "healthy"
-        }
+    """
+    Health check endpoint - used by monitoring systems and load balancers
+    to verify the application is running and responsive.
+
+    In production, this might also check database connectivity,
+    Redis availability, etc.
+
+    Returns:
+        dict: Status information about the application
+    """
+    return {"status": "healthy"}
