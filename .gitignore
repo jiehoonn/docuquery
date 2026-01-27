@@ -19,3 +19,6 @@ __pycache__/
 postgres_data/
 redis_data/
 qdrant_data/
+
+# Development uploads
+uploads/
