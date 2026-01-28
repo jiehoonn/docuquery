@@ -40,6 +40,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # ============ Gemini ============
+    gemini_api_key: str = ""
+
     # ============ Database ============
     # Required - no default value means app won't start without it
     # Format: postgresql+asyncpg://user:password@host:port/database
