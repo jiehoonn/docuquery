@@ -21,6 +21,9 @@ from app.api.v1.auth import router as auth_router
 # Import document router which contains document management endpoints (upload, list, get, delete)
 from app.api.v1.documents import router as documents_router
 
+# Import RAG router
+from app.api.v1.query import router as query_router
+
 # Create the FastAPI application instance
 # This is the main object that handles all incoming HTTP requests
 app = FastAPI(
@@ -37,6 +40,9 @@ app.include_router(auth_router, prefix="/api/v1")
 # Register the documents router
 # Routes: /api/v1/documents/upload, /api/v1/documents, etc.
 app.include_router(documents_router, prefix="/api/v1")
+
+# Register the RAG router
+app.include_router(query_router, prefix="/api/v1")
 
 
 @app.get("/")
