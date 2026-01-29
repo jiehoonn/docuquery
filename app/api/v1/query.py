@@ -26,12 +26,12 @@ async def query(
     if len(request.question) > 500:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Question must be 500 cahracters or less"
+            detail="Question must be 500 characters or less"
         )
     # 2. Call query_documents with tenant_id from current_user
     result = await query_documents(
         tenant_id=str(current_user.organization_id),
-        quesiton=request.question,
+        question=request.question,
         document_ids=request.document_ids
     )
     # 3. Return the result

@@ -242,15 +242,16 @@ def search_similar(
         )
 
     # Search for similar vectors
-    results = client.search(
+    # Note: qdrant-client v1.12+ renamed search() to query_points()
+    results = client.query_points(
         collection_name=collection_name,
-        query_vector=query_embedding,
+        query=query_embedding,
         limit=top_k,
         query_filter=query_filter,
         with_payload=True,  # Include metadata in results
     )
 
-    # Format results
+    # Format results (query_points returns a QueryResponse with .points list)
     return [
         {
             "score": hit.score,
@@ -258,7 +259,7 @@ def search_similar(
             "chunk_index": hit.payload["chunk_index"],
             "text": hit.payload["text"],
         }
-        for hit in results
+        for hit in results.points
     ]
 
 

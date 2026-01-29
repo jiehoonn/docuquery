@@ -43,26 +43,12 @@ def build_prompt(chunks: list[str], question: str) -> str:
 async def generate_answer(chunks: list[str], question: str) -> str:
     """
     Call Gemini API with the prompt, return the answer.
-
-    Currently using mock response for development.
-    TODO: Swap back to Gemini when quota resets.
     """
     prompt = build_prompt(chunks, question)
-    
-    # MOCK RESPONSE FOR DEVELOPMENT
-    # This simulates what a real LLM would return
-    mock_answer = f"Based on the provided context, {question.lower().replace('?', '')}. "
-    mock_answer += "The relevant information can be found in [1]"
-    if len(chunks) > 1:
-        mock_answer += " and [2]"
-    mock_answer += "."
-    
-    return mock_answer
 
-    # UNCOMMENT WHEN GEMINI QUOTA RESETS
-    # prompt = build_prompt(chunks, question)
-    # response = client.models.generate_content(
-    #     model="gemini-2.0-flash",
-    #     contents=prompt
-    # )
-    # return response.text
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
+    
+    return response.text

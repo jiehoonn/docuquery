@@ -1,0 +1,17 @@
+The Solar System consists of the Sun and the objects that orbit it. The Sun contains 99.86% 
+of the mass of the entire Solar System. There are eight recognized planets in the Solar System. 
+In order from the Sun, they are: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and Neptune.
+
+Jupiter is the largest planet in the Solar System. It has a mass of approximately 1.898 × 10^27 kg, 
+which is more than twice the mass of all other planets combined. Jupiter has at least 95 known moons. 
+The four largest moons — Io, Europa, Ganymede, and Callisto — are called the Galilean moons because 
+they were first observed by Galileo Galilei in 1610.
+
+Mars is the fourth planet from the Sun. It is often called the "Red Planet" because iron oxide on 
+its surface gives it a reddish appearance. Mars has two small moons: Phobos and Deimos. The highest 
+mountain in the Solar System is Olympus Mons on Mars, standing at approximately 21.9 km tall. 
+Mars has a thin atmosphere composed mostly of carbon dioxide (95.3%).
+
+Saturn is the sixth planet from the Sun and is famous for its prominent ring system. Saturn has 
+146 known moons, with Titan being the largest. Titan is the only moon in the Solar System with 
+a dense atmosphere. Saturn's density is so low that it would float if placed in water.

@@ -23,6 +23,7 @@ from app.db.session import get_db
 from app.db.models import Document, User
 from app.api.v1.auth import get_current_user
 from app.services.storage import save_file, delete_file, get_file_extension
+from app.services.processor import process_document
 
 # Create router - all routes will be prefixed with /documents
 router = APIRouter(prefix="/documents",
@@ -150,6 +151,11 @@ async def upload_document(
     db.add(document)
     await db.commit()
     await db.refresh(document)  # Refresh to get any default values
+
+    # 6. Process the document inline (extract text, chunk, embed, store in Qdrant)
+    # In production, this would be handled async via SQS + Lambda worker
+    await process_document(str(document.id), db)
+    await db.refresh(document)
 
     return document
 
