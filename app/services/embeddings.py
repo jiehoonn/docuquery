@@ -23,6 +23,13 @@ Model: all-MiniLM-L6-v2
     - Speed: Fast (good for real-time queries)
     - Quality: Good for general-purpose semantic search
     - Cost: Free (runs locally, no API calls)
+
+TODO(cloud): In production, consider deploying the embedding model as a
+    separate service (e.g., on a GPU-enabled EC2 instance or as a SageMaker
+    endpoint) to avoid loading the model in every app instance. This also
+    enables horizontal scaling of the API servers independently from the
+    embedding compute. Alternatively, could switch to an API-based embedding
+    service (OpenAI, Cohere) if self-hosting becomes a bottleneck.
 """
 
 from sentence_transformers import SentenceTransformer

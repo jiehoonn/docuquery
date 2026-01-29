@@ -1,11 +1,26 @@
 """
-app/services/storage.py - File Storage Services
+app/services/storage.py - File Storage Service
 
 Handles storing and retrieving uploaded documents.
-Currently uses local filesystem; can be swapped for S3 later.
+Currently uses local filesystem for development.
 
-File Structure:
-uploads/{tenant_id}/{document_id}/original.{extension}
+File structure (mirrors planned S3 layout):
+    uploads/{tenant_id}/{document_id}/original.{extension}
+
+This tenant-namespaced path structure ensures:
+    - Complete file isolation between organizations
+    - Easy migration to S3 (same path becomes the S3 key)
+    - Simple cleanup when deleting a document
+
+TODO(cloud): Replace local filesystem with AWS S3.
+    - Use boto3 S3 client for upload/download/delete
+    - S3 bucket: docuquery-documents (or per-environment)
+    - S3 key format: {tenant_id}/{document_id}/original.{ext}
+    - Enable server-side encryption (SSE-S3)
+    - Set lifecycle rules for cost optimization (e.g., move to
+      S3 Infrequent Access after 90 days)
+    - The text_extractor.py will need updating to read from S3
+      instead of local filesystem (download to /tmp first)
 """
 
 from pathlib import Path

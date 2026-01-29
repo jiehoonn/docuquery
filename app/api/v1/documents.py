@@ -153,7 +153,14 @@ async def upload_document(
     await db.refresh(document)  # Refresh to get any default values
 
     # 6. Process the document inline (extract text, chunk, embed, store in Qdrant)
-    # In production, this would be handled async via SQS + Lambda worker
+    # TODO(cloud): Replace inline processing with async SQS + Lambda/ECS worker.
+    #   - After creating the document record, send a message to SQS queue
+    #     with the document_id and tenant_id
+    #   - A Lambda function or ECS task picks up the message and runs
+    #     process_document() asynchronously
+    #   - The upload endpoint returns immediately with status="queued"
+    #   - Client polls GET /documents/{id} to check processing status
+    #   - Failed processing goes to a Dead Letter Queue (DLQ) for inspection
     await process_document(str(document.id), db)
     await db.refresh(document)
 

@@ -19,6 +19,14 @@ This processor is designed to be called:
 Document status flow:
     queued → processing → ready (success)
                        → failed (error)
+
+TODO(cloud): In production, this module will be called by an SQS consumer
+    running on AWS Lambda or ECS. The consumer will:
+    1. Receive a message from SQS with {document_id, tenant_id}
+    2. Create a database session
+    3. Call process_document(document_id, db)
+    4. On failure after 3 retries, the message goes to a Dead Letter Queue
+    See: app/workers/process_document.py (to be created)
 """
 
 from datetime import datetime

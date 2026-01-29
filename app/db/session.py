@@ -22,6 +22,12 @@ from sqlalchemy.orm import DeclarativeBase
 # ============ Database Engine ============
 # The engine manages the connection pool to the database.
 # It doesn't connect immediately - connections are made when needed.
+#
+# TODO(cloud): In production with AWS RDS:
+#   - Use RDS PostgreSQL endpoint as DATABASE_URL
+#   - Set echo=False to disable SQL logging (use structured logging instead)
+#   - Consider using RDS Proxy for connection pooling and IAM auth
+#   - Add pool_size and max_overflow parameters for production load
 
 engine = create_async_engine(
     settings.database_url,  # e.g., "postgresql+asyncpg://user:pass@localhost/db"

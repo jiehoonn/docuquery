@@ -24,6 +24,14 @@ Typical usage:
     1. Document uploaded → chunks embedded → store_embeddings()
     2. User asks question → embed question → search_similar()
     3. Document deleted → delete_document_vectors()
+
+TODO(cloud): In production, deploy Qdrant on a dedicated EC2 instance
+    or use Qdrant Cloud (managed service). Consider:
+    - Using a singleton client with connection pooling instead of
+      creating a new client per operation
+    - Adding health checks for the Qdrant connection
+    - Implementing retry logic for transient connection failures
+    - Enabling Qdrant snapshots for backup and disaster recovery
 """
 
 from qdrant_client import QdrantClient
