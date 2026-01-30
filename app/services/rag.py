@@ -114,7 +114,21 @@ async def query_documents(
 
         # Step 5: Send chunks + question to Gemini LLM for answer generation
         # The LLM reads the chunks as context and generates a grounded answer
-        answer = await generate_answer(chunks, question)
+        # Wrapped in try/except for graceful degradation if LLM is unavailable
+        try:
+            answer = await generate_answer(chunks, question)
+        except Exception:
+            # Graceful degradation: LLM is unavailable, return raw chunks instead
+            # NOT cached — when the LLM recovers, the next query gets a real answer
+            fallback_answer = "LLM unavailable. Here are the most relevant chunks:\n"
+            for i in range(len(results)):
+                fallback_answer += f"[{i + 1}] {results[i]['text']}\n"
+
+            return {
+                "answer": fallback_answer,
+                "sources": results,
+                "cached": False
+            }
 
         # Step 6: Build the response with answer and source metadata
         response = {
