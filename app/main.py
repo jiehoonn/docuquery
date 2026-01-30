@@ -24,6 +24,9 @@ from app.api.v1.documents import router as documents_router
 # Import RAG router
 from app.api.v1.query import router as query_router
 
+# Import usage router which provides usage statistics (storage, queries, rate limits)
+from app.api.v1.usage import router as usage_router
+
 # Create the FastAPI application instance
 # This is the main object that handles all incoming HTTP requests
 app = FastAPI(
@@ -43,6 +46,10 @@ app.include_router(documents_router, prefix="/api/v1")
 
 # Register the RAG router
 app.include_router(query_router, prefix="/api/v1")
+
+# Register the usage router
+# Routes: /api/v1/usage
+app.include_router(usage_router, prefix="/api/v1")
 
 
 @app.get("/")

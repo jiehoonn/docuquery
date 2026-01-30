@@ -26,6 +26,7 @@ from typing import List, Optional
 from app.db.models import User
 from app.api.v1.auth import get_current_user
 from app.services.rag import query_documents
+from app.core.multi_tenant import check_rate_limit
 
 # Create router - all routes will be prefixed with /query
 # tags=["query"] groups this endpoint in the API docs
@@ -107,7 +108,16 @@ async def query(
             detail="Question must be 500 characters or less"
         )
 
-    # 2. Call RAG orchestrator with tenant_id from the authenticated user
+    # 2. Check rate limit before running the (expensive) RAG pipeline
+    # Call check_rate_limit with the tenant_id, and if not allowed, raise 429
+    rate = await check_rate_limit(str(current_user.organization_id))
+    if not rate["allowed"]:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Rate limit exceeded. {rate['remaining']} requests remaining. Limit: {rate['limit']}/hour"
+        )
+
+    # 3. Call RAG orchestrator with tenant_id from the authenticated user
     # CRITICAL: tenant_id comes from the JWT, not from user input,
     # ensuring users can only query their own organization's documents
     result = await query_documents(
