@@ -17,7 +17,7 @@ Two authentication methods are supported:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from pydantic import BaseModel, EmailStr
@@ -38,7 +38,13 @@ from app.core.security import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 # HTTPBearer extracts the token from "Authorization: Bearer <token>" header
-security = HTTPBearer()
+# auto_error=False makes it return None instead of 401 when header is missing,
+# allowing us to fall through to API key auth
+security = HTTPBearer(auto_error=False)
+
+# APIKeyHeader extracts the value from the "X-API-Key" header
+# auto_error=False means it returns None if the header isn't present
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 # ============ Request/Response Schemas ============
@@ -83,60 +89,97 @@ class ApiKeyResponse(BaseModel):
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    api_key: str = Depends(api_key_header),
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """
-    Dependency that extracts and validates the current user from a JWT token.
+    Dependency that authenticates a user via API key OR JWT token.
+
+    Supports two authentication methods (checked in this order):
+        1. API Key: X-API-Key header → hash key → find org → find user in org
+        2. JWT Token: Authorization: Bearer <token> → decode → find user by ID
+
+    If neither is provided, returns 401 Unauthorized.
 
     Usage in an endpoint:
         @router.get("/protected")
         async def protected_route(current_user: User = Depends(get_current_user)):
             # current_user is guaranteed to be a valid, authenticated user
-            return {"user_id": str(current_user.id)}
-
-    How it works:
-        1. HTTPBearer extracts token from "Authorization: Bearer <token>"
-        2. We verify the token signature and expiration
-        3. We extract the user ID from the token's "sub" claim
-        4. We fetch the full user from the database
-        5. We return the user (or raise 401 if anything fails)
+            # Works with EITHER auth method - endpoint doesn't need to know which
 
     Raises:
-        HTTPException 401: If token is invalid, expired, or user not found
+        HTTPException 401: If credentials are missing, invalid, or user not found
     """
-    # Extract the token string from the Authorization header
-    token = credentials.credentials
 
-    try:
-        # Verify token signature and decode the payload
-        payload = verify_access_token(token)
+    # ── Method 1: API Key Authentication ──
+    # Check X-API-Key header first (preferred for programmatic access)
+    if api_key:
+        # 1. Hash the api_key using hash_api_key() (already imported)
+        hashed_key = hash_api_key(api_key)
+        # 2. Look up the Organization where api_key_hash matches
+        result = await db.execute(select(Organization).where(Organization.api_key_hash == hashed_key))
+        org = result.scalar_one_or_none()
+        # 3. If no org found, raise 401 "Invalid API key"
+        if not org:   
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Organization API Key"
+            )
+        # 4. Find a User that belongs to this organization
+        else:
+            result = await db.execute(select(User).where(User.organization_id == org.id))
+            user = result.scalar_one_or_none()
+         # 5. If no user found, raise 401 "No user found for this API key"
+            if not user:   
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="No user found for this API key"
+                )
+        # 6. Return the user
+        return user
 
-        # "sub" (subject) claim contains the user ID
-        user_id: str = payload.get("sub")
+    # ── Method 2: JWT Token Authentication ──
+    # Fall back to Bearer token (used by web UI)
+    if credentials:
+        # Extract the token string from the Authorization header
+        token = credentials.credentials
 
-        if not user_id:
+        try:
+            # Verify token signature and decode the payload
+            payload = verify_access_token(token)
+
+            # "sub" (subject) claim contains the user ID
+            user_id: str = payload.get("sub")
+
+            if not user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token"
+                )
+        except ValueError:
+            # verify_access_token raises ValueError for invalid tokens
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token"
             )
-    except ValueError:
-        # verify_access_token raises ValueError for invalid tokens
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
 
-    # Fetch the user from the database
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
+        # Fetch the user from the database
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
-        )
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
 
-    return user
+        return user
+
+    # ── No credentials provided ──
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required. Provide either X-API-Key header or Authorization: Bearer <token>"
+    )
 
 
 # ============ Endpoints ============
