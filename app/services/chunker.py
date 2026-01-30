@@ -30,6 +30,10 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]
     # Handle empty text
     if not text or not text.strip():
         return []
+
+    # Guard: overlap must be less than chunk_size, otherwise the window never advances
+    if overlap >= chunk_size:
+        raise ValueError(f"overlap ({overlap}) must be less than chunk_size ({chunk_size})")
     
     chunks = []
     len_text = len(text)
