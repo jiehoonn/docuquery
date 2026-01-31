@@ -7,27 +7,27 @@ This module provides endpoints for managing documents:
 - GET /{id} - Get details of a specific document
 - DELETE /{id} - Delete a document
 
-All endpoints require authentication and enforce tenant isolation - 
+All endpoints require authentication and enforce tenant isolation -
 users can only access documents belonging to their organization.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import List, Optional
 
-from app.db.session import get_db
-from app.db.models import Document, User
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.v1.auth import get_current_user
-from app.services.storage import save_file, delete_file, get_file_extension
+from app.db.models import Document, User
+from app.db.session import get_db
 from app.services.processor import process_document
+from app.services.storage import delete_file, get_file_extension, save_file
 
 # Create router - all routes will be prefixed with /documents
-router = APIRouter(prefix="/documents",
-tags=["documents"])
+router = APIRouter(prefix="/documents", tags=["documents"])
 
 # ============ Configuration ============
 
@@ -40,8 +40,10 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 # ============ Schemas ============
 
+
 class DocumentResponse(BaseModel):
     """Response schema for document data."""
+
     id: uuid.UUID
     title: Optional[str]
     file_path: str
@@ -56,12 +58,16 @@ class DocumentResponse(BaseModel):
         # Allows Pydantic to read data from SQLAlchemy models
         from_attributes = True
 
+
 class DocumentListResponse(BaseModel):
     """Response schema for listing documents."""
+
     documents: List[DocumentResponse]
     total: int
 
+
 # ============ Helper Functions ============
+
 
 def validate_file(file: UploadFile) -> None:
     """
@@ -78,7 +84,7 @@ def validate_file(file: UploadFile) -> None:
     if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File type '{extension}' not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"
+            detail=f"File type '{extension}' not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}",
         )
 
     # Check file size (read content to get size, then reset)
@@ -89,16 +95,18 @@ def validate_file(file: UploadFile) -> None:
     if size > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024 * 1024)}MB"
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024 * 1024)}MB",
         )
 
+
 # ============ Endpoints ============
+
 
 @router.post("/upload", response_model=DocumentResponse)
 async def upload_document(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Upload a new document.
@@ -136,7 +144,7 @@ async def upload_document(
     file_path = save_file(
         tenant_id=str(current_user.organization_id),
         document_id=str(document_id),
-        file=file
+        file=file,
     )
 
     # 5. Create document record in database
@@ -166,10 +174,10 @@ async def upload_document(
 
     return document
 
+
 @router.get("", response_model=DocumentListResponse)
 async def list_documents(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     """
     List all documents for the current user's organization.
@@ -189,17 +197,14 @@ async def list_documents(
     )
     documents = result.scalars().all()
 
-    return DocumentListResponse(
-        documents=documents,
-        total=len(documents)
-    )
+    return DocumentListResponse(documents=documents, total=len(documents))
 
-@router.get("/{document_id}",
-response_model=DocumentResponse)
+
+@router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Get details of a specific document.
@@ -217,26 +222,24 @@ async def get_document(
     result = await db.execute(
         select(Document).where(
             Document.id == document_id,
-            Document.tenant_id == current_user.organization_id  # Tenant isolation
+            Document.tenant_id == current_user.organization_id,  # Tenant isolation
         )
     )
     document = result.scalar_one_or_none()
 
     if not document:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Document not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
         )
 
     return document
 
 
-@router.delete("/{document_id}",
-status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
     document_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Delete a document.
@@ -260,15 +263,14 @@ async def delete_document(
     result = await db.execute(
         select(Document).where(
             Document.id == document_id,
-            Document.tenant_id == current_user.organization_id  # Tenant isolation
+            Document.tenant_id == current_user.organization_id,  # Tenant isolation
         )
     )
     document = result.scalar_one_or_none()
 
     if not document:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Document not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
         )
 
     # Delete file from storage
@@ -278,5 +280,5 @@ async def delete_document(
     await db.delete(document)
     await db.commit()
 
-    # Return 204 No Content (no response body)          
+    # Return 204 No Content (no response body)
     return None

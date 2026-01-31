@@ -23,16 +23,19 @@ TODO(cloud): Replace local filesystem with AWS S3.
       instead of local filesystem (download to /tmp first)
 """
 
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 from fastapi import UploadFile
 
 # Base directory for all uploads (relative to project root)
 UPLOAD_DIR = Path("uploads")
 
+
 def get_file_extension(filename: str) -> str:
     """Extract file extension from filename (e.g., 'report.pdf' -> 'pdf')"""
     return filename.rsplit(".", 1)[-1] if "." in filename else ""
+
 
 def save_file(tenant_id: str, document_id: str, file: UploadFile) -> str:
     """
@@ -42,7 +45,7 @@ def save_file(tenant_id: str, document_id: str, file: UploadFile) -> str:
         tenant_id: The organization's UUID
         document_id: The document's UUID
         file: FastAPI UploadFile object
-    
+
     Returns:
         The file path where the file was saved (relative path)
     """
@@ -59,9 +62,10 @@ def save_file(tenant_id: str, document_id: str, file: UploadFile) -> str:
         # Read content from UploadFile and write to disk
         content = file.file.read()
         f.write(content)
-    
+
     # Return relative path as string (for storing in database)
     return str(file_path)
+
 
 def delete_file(file_path: str) -> bool:
     """
@@ -69,7 +73,7 @@ def delete_file(file_path: str) -> bool:
 
     Args:
         file_path: Path to the file
-    
+
     Returns:
         True if deleted, False if not found
     """

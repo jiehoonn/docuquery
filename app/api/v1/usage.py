@@ -14,20 +14,21 @@ This endpoint helps organizations:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 from pydantic import BaseModel
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import get_db
-from app.db.models import User, Organization, Document
 from app.api.v1.auth import get_current_user
-from app.core.multi_tenant import get_rate_limit_status, STORAGE_LIMIT_MB
+from app.core.multi_tenant import STORAGE_LIMIT_MB, get_rate_limit_status
+from app.db.models import Document, Organization, User
+from app.db.session import get_db
 
 # Create router - all routes will be prefixed with /usage
 router = APIRouter(prefix="/usage", tags=["usage"])
 
 
 # ============ Response Schemas ============
+
 
 class UsageResponse(BaseModel):
     """
@@ -36,6 +37,7 @@ class UsageResponse(BaseModel):
     Provides a complete picture of the tenant's current resource consumption
     and quota limits.
     """
+
     # Storage usage
     storage_used_mb: int
     storage_limit_mb: int
@@ -55,10 +57,10 @@ class UsageResponse(BaseModel):
 
 # ============ Endpoints ============
 
+
 @router.get("", response_model=UsageResponse)
 async def get_usage(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ):
     """
     Get usage statistics for the current user's organization.
@@ -88,15 +90,12 @@ async def get_usage(
     tenant_id = current_user.organization_id
 
     # 1. Fetch organization for storage and query stats
-    result = await db.execute(
-        select(Organization).where(Organization.id == tenant_id)
-    )
+    result = await db.execute(select(Organization).where(Organization.id == tenant_id))
     org = result.scalar_one_or_none()
 
     if not org:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
         )
 
     # 2. Count documents by status (single query with conditional aggregation)

@@ -12,20 +12,21 @@ Security principles followed:
 3. API keys are hashed with SHA-256 before storage (can't be reversed)
 """
 
-import bcrypt as bcrypt_lib  # For password hashing
-from jose import jwt, JWTError  # For JWT token handling
 import datetime
-from datetime import UTC, timedelta
+import hashlib  # For SHA-256 hashing of API keys
 import secrets  # Cryptographically secure random number generation
 import string
-import hashlib  # For SHA-256 hashing of API keys
+from datetime import UTC, timedelta
+
+import bcrypt as bcrypt_lib  # For password hashing
+from jose import JWTError, jwt  # For JWT token handling
 
 from app.core.config import settings
-
 
 # ============ Password Hashing ============
 # We use bcrypt because it's designed to be slow, making brute-force
 # attacks impractical. The "rounds" parameter controls how slow it is.
+
 
 def hash_password(password: str) -> str:
     """
@@ -42,7 +43,7 @@ def hash_password(password: str) -> str:
         # Returns something like: "$2b$12$LQv3c1yqBw..."
     """
     # Convert string to bytes (bcrypt works with bytes)
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
 
     # Generate a random salt with 12 rounds (2^12 = 4096 iterations)
     # Higher rounds = more secure but slower
@@ -52,7 +53,7 @@ def hash_password(password: str) -> str:
     hashed = bcrypt_lib.hashpw(password_bytes, salt)
 
     # Convert bytes back to string for database storage
-    return hashed.decode('utf-8')
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -72,7 +73,7 @@ def verify_password(plain: str, hashed: str) -> bool:
     """
     # bcrypt.checkpw handles extracting the salt from the hash
     # and comparing securely (constant-time comparison)
-    return bcrypt_lib.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
+    return bcrypt_lib.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
 # ============ JWT Tokens ============
@@ -159,6 +160,7 @@ def verify_access_token(token: str) -> dict:
 # API keys are used for programmatic access (scripts, integrations).
 # Unlike JWT tokens, they don't expire but can be regenerated.
 
+
 def generate_api_key() -> str:
     """
     Generate a cryptographically secure API key.
@@ -179,7 +181,7 @@ def generate_api_key() -> str:
     alphabet = string.ascii_letters + string.digits
 
     # Generate 32 random characters
-    random_part = ''.join(secrets.choice(alphabet) for _ in range(32))
+    random_part = "".join(secrets.choice(alphabet) for _ in range(32))
 
     # Prefix with "dk_" (DocuQuery key)
     return f"dk_{random_part}"

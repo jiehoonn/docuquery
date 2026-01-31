@@ -26,7 +26,9 @@ TODO(cloud): In production, replace local Redis with AWS ElastiCache
 
 import hashlib
 import json
+
 import redis.asyncio as redis
+
 from app.core.config import settings
 
 
@@ -106,7 +108,9 @@ async def get_cached_answer(tenant_id: str, query_text: str) -> dict | None:
     return None
 
 
-async def cache_answer(tenant_id: str, query_text: str, answer: dict, ttl: int = 3600) -> None:
+async def cache_answer(
+    tenant_id: str, query_text: str, answer: dict, ttl: int = 3600
+) -> None:
     """
     Store a query result in the cache.
 

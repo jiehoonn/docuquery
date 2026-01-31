@@ -19,7 +19,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import String, Integer, DateTime, ForeignKey, Index
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.session import Base
@@ -34,6 +34,7 @@ class User(Base):
 
     Table: users
     """
+
     __tablename__ = "users"
 
     # Primary key: UUID is better than auto-increment for distributed systems
@@ -69,6 +70,7 @@ class Organization(Base):
 
     Table: organizations
     """
+
     __tablename__ = "organizations"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -101,6 +103,7 @@ class Document(Base):
 
     CRITICAL: All queries MUST filter by tenant_id for security!
     """
+
     __tablename__ = "documents"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -133,4 +136,4 @@ class Document(Base):
 
     # Composite index for efficient tenant-scoped queries
     # This makes "SELECT * FROM documents WHERE tenant_id = ?" fast
-    __table_args__ = (Index('idx_document_tenant', 'tenant_id', 'id'),)
+    __table_args__ = (Index("idx_document_tenant", "tenant_id", "id"),)

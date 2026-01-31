@@ -1,18 +1,19 @@
 """
-  app/services/chunker.py - Text Chunking Service
+app/services/chunker.py - Text Chunking Service
 
-  Splits extracted text into smaller overlapping chunks for embedding.
-  This is the second step in the document processing pipeline.
+Splits extracted text into smaller overlapping chunks for embedding.
+This is the second step in the document processing pipeline.
 
-  Pipeline: Extract Text → Chunk → Embed → Store in Qdrant
-                           ^^^^^
-                          (this file)
+Pipeline: Extract Text → Chunk → Embed → Store in Qdrant
+                         ^^^^^
+                        (this file)
 
-  Why chunking?
-  - Embedding models have token/character limits
-  - Smaller chunks give more precise search results
-  - Overlap ensures context isn't lost at chunk boundaries
+Why chunking?
+- Embedding models have token/character limits
+- Smaller chunks give more precise search results
+- Overlap ensures context isn't lost at chunk boundaries
 """
+
 
 def chunk_text(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
     """
@@ -33,14 +34,22 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]
 
     # Guard: overlap must be less than chunk_size, otherwise the window never advances
     if overlap >= chunk_size:
-        raise ValueError(f"overlap ({overlap}) must be less than chunk_size ({chunk_size})")
-    
+        raise ValueError(
+            f"overlap ({overlap}) must be less than chunk_size ({chunk_size})"
+        )
+
     chunks = []
     len_text = len(text)
 
     # l = left pointer (start of current chunk)
     # r = right pointer (end of current chunk)
-    l, r, = 0, 0
+    (
+        l,
+        r,
+    ) = (
+        0,
+        0,
+    )
 
     while l < len_text:
         # Move right pointer by chunk_size
@@ -50,7 +59,7 @@ def chunk_text(text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]
         if r >= len_text:
             chunks.append(text[l:])
             break
-        
+
         # Extract the chunk
         chunk = text[l:r]
         chunks.append(chunk)

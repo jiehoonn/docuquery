@@ -30,14 +30,15 @@ TODO(cloud): In production, this module will be called by an SQS consumer
 """
 
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Document
-from app.services.text_extractor import extract_text
 from app.services.chunker import chunk_text
 from app.services.embeddings import generate_embeddings
-from app.services.qdrant import store_embeddings, delete_document_vectors
+from app.services.qdrant import delete_document_vectors, store_embeddings
+from app.services.text_extractor import extract_text
 
 
 async def process_document(document_id: str, db: AsyncSession) -> bool:
@@ -64,9 +65,7 @@ async def process_document(document_id: str, db: AsyncSession) -> bool:
             success = await process_document("doc-uuid-here", db)
     """
     # 1. Fetch document from database
-    result = await db.execute(
-        select(Document).where(Document.id == document_id)
-    )
+    result = await db.execute(select(Document).where(Document.id == document_id))
     document = result.scalar_one_or_none()
 
     if not document:
@@ -149,9 +148,7 @@ async def reprocess_document(document_id: str, db: AsyncSession) -> bool:
         True if reprocessing succeeded, False otherwise
     """
     # Fetch document to get tenant_id
-    result = await db.execute(
-        select(Document).where(Document.id == document_id)
-    )
+    result = await db.execute(select(Document).where(Document.id == document_id))
     document = result.scalar_one_or_none()
 
     if not document:
@@ -192,9 +189,7 @@ async def process_all_queued(db: AsyncSession) -> dict:
         Dict with counts: {"processed": N, "failed": M, "total": N+M}
     """
     # Find all queued documents
-    result = await db.execute(
-        select(Document).where(Document.status == "queued")
-    )
+    result = await db.execute(select(Document).where(Document.status == "queued"))
     documents = result.scalars().all()
 
     processed = 0

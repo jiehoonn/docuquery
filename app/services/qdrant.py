@@ -34,21 +34,22 @@ TODO(cloud): In production, deploy Qdrant on a dedicated EC2 instance
     - Enabling Qdrant snapshots for backup and disaster recovery
 """
 
+import uuid
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
-    VectorParams,
     Distance,
-    PointStruct,
-    Filter,
     FieldCondition,
+    Filter,
     MatchValue,
+    PointStruct,
+    VectorParams,
 )
-import uuid
 
 from app.core.config import settings
 
-
 # ============ Client Connection ============
+
 
 def get_client() -> QdrantClient:
     """
@@ -82,6 +83,7 @@ def get_collection_name(tenant_id: str) -> str:
 
 
 # ============ Collection Management ============
+
 
 def ensure_collection(tenant_id: str) -> None:
     """
@@ -135,6 +137,7 @@ def delete_collection(tenant_id: str) -> None:
 
 
 # ============ Vector Operations ============
+
 
 def store_embeddings(
     tenant_id: str,

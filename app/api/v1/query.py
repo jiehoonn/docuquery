@@ -19,14 +19,15 @@ Authentication:
     ensuring users can only query their own organization's documents.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 from typing import List, Optional
 
-from app.db.models import User
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+
 from app.api.v1.auth import get_current_user
-from app.services.rag import query_documents
 from app.core.multi_tenant import check_rate_limit
+from app.db.models import User
+from app.services.rag import query_documents
 
 # Create router - all routes will be prefixed with /query
 # tags=["query"] groups this endpoint in the API docs
@@ -34,6 +35,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 
 
 # ============ Request/Response Schemas ============
+
 
 class QueryRequest(BaseModel):
     """
@@ -44,6 +46,7 @@ class QueryRequest(BaseModel):
         document_ids: Optional list of specific document UUIDs to search.
                      If omitted, searches all documents in the organization.
     """
+
     question: str
     document_ids: Optional[List[str]] = None
 
@@ -58,6 +61,7 @@ class QueryResponse(BaseModel):
                  score, document_id, chunk_index, and text
         cached: Whether this response was served from Redis cache
     """
+
     answer: str
     sources: list
     cached: bool
@@ -65,11 +69,9 @@ class QueryResponse(BaseModel):
 
 # ============ Endpoints ============
 
+
 @router.post("", response_model=QueryResponse)
-async def query(
-    request: QueryRequest,
-    current_user: User = Depends(get_current_user)
-):
+async def query(request: QueryRequest, current_user: User = Depends(get_current_user)):
     """
     Query documents using natural language.
 
@@ -105,7 +107,7 @@ async def query(
     if len(request.question) > 500:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Question must be 500 characters or less"
+            detail="Question must be 500 characters or less",
         )
 
     # 2. Check rate limit before running the (expensive) RAG pipeline
@@ -114,7 +116,7 @@ async def query(
     if not rate["allowed"]:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Rate limit exceeded. {rate['remaining']} requests remaining. Limit: {rate['limit']}/hour"
+            detail=f"Rate limit exceeded. {rate['remaining']} requests remaining. Limit: {rate['limit']}/hour",
         )
 
     # 3. Call RAG orchestrator with tenant_id from the authenticated user
@@ -123,7 +125,7 @@ async def query(
     result = await query_documents(
         tenant_id=str(current_user.organization_id),
         question=request.question,
-        document_ids=request.document_ids
+        document_ids=request.document_ids,
     )
 
     # 3. Return the result (FastAPI auto-serializes to QueryResponse)

@@ -14,10 +14,10 @@ How async database access works:
     - Result: Better performance under high load
 """
 
-from app.core.config import settings
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
+from app.core.config import settings
 
 # ============ Database Engine ============
 # The engine manages the connection pool to the database.
@@ -31,7 +31,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 engine = create_async_engine(
     settings.database_url,  # e.g., "postgresql+asyncpg://user:pass@localhost/db"
-    echo=True  # Log all SQL statements (helpful for debugging, disable in production)
+    echo=True,  # Log all SQL statements (helpful for debugging, disable in production)
 )
 
 
@@ -40,14 +40,14 @@ engine = create_async_engine(
 # Each request gets its own session to prevent data conflicts.
 
 async_session = async_sessionmaker(
-    engine,
-    expire_on_commit=False  # Objects remain usable after commit
+    engine, expire_on_commit=False  # Objects remain usable after commit
 )
 
 
 # ============ Base Class for Models ============
 # All database models (User, Organization, Document) inherit from this.
 # It provides the foundation for SQLAlchemy's ORM magic.
+
 
 class Base(DeclarativeBase):
     """
@@ -58,12 +58,14 @@ class Base(DeclarativeBase):
     - Have access to SQLAlchemy's query capabilities
     - Be tracked for migrations by Alembic
     """
+
     pass
 
 
 # ============ Dependency for FastAPI ============
 # This is a "dependency injection" pattern used throughout FastAPI.
 # Endpoints declare they need a database session, and FastAPI provides one.
+
 
 async def get_db():
     """

@@ -39,16 +39,14 @@ Why separate this from the API endpoint?
     - This makes it easier to test, reuse, and swap components
 """
 
-from app.services.cache import get_cached_answer, cache_answer
+from app.services.cache import cache_answer, get_cached_answer
 from app.services.embeddings import generate_embedding
-from app.services.qdrant import search_similar
 from app.services.llm import generate_answer
+from app.services.qdrant import search_similar
 
 
 async def query_documents(
-    tenant_id: str,
-    question: str,
-    document_ids: list[str] | None = None
+    tenant_id: str, question: str, document_ids: list[str] | None = None
 ) -> dict:
     """
     Execute the full RAG query pipeline.
@@ -98,7 +96,9 @@ async def query_documents(
 
         # Step 3: Search Qdrant for the top 5 most semantically similar chunks
         # Results are filtered by tenant_id (and optionally by specific document_ids)
-        results = search_similar(tenant_id, question_embedding, document_ids=document_ids)
+        results = search_similar(
+            tenant_id, question_embedding, document_ids=document_ids
+        )
 
         # Step 4: Extract just the text content from each search result
         chunks = [r["text"] for r in results]
@@ -109,7 +109,7 @@ async def query_documents(
             return {
                 "answer": "No relevant documents found. Please upload documents first.",
                 "sources": [],
-                "cached": False
+                "cached": False,
             }
 
         # Step 5: Send chunks + question to Gemini LLM for answer generation
@@ -124,17 +124,13 @@ async def query_documents(
             for i in range(len(results)):
                 fallback_answer += f"[{i + 1}] {results[i]['text']}\n"
 
-            return {
-                "answer": fallback_answer,
-                "sources": results,
-                "cached": False
-            }
+            return {"answer": fallback_answer, "sources": results, "cached": False}
 
         # Step 6: Build the response with answer and source metadata
         response = {
             "answer": answer,
             "sources": results,  # Includes document_id, chunk_index, text, score
-            "cached": False
+            "cached": False,
         }
 
         # Step 7: Cache the result in Redis (TTL: 1 hour)

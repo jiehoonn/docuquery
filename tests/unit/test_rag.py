@@ -11,16 +11,27 @@ This lets us test the pipeline logic (caching, fallback, response format)
 without needing any running services.
 """
 
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from app.services.rag import query_documents
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+from app.services.rag import query_documents
 
 # Fake data that our mocks will return
 FAKE_EMBEDDING = [0.1] * 384  # 384-dimensional vector (matches all-MiniLM-L6-v2)
 FAKE_SEARCH_RESULTS = [
-    {"score": 0.95, "document_id": "doc-1", "chunk_index": 0, "text": "Mars is the fourth planet."},
-    {"score": 0.87, "document_id": "doc-1", "chunk_index": 1, "text": "Mars has two moons."},
+    {
+        "score": 0.95,
+        "document_id": "doc-1",
+        "chunk_index": 0,
+        "text": "Mars is the fourth planet.",
+    },
+    {
+        "score": 0.87,
+        "document_id": "doc-1",
+        "chunk_index": 1,
+        "text": "Mars has two moons.",
+    },
 ]
 
 

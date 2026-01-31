@@ -5,20 +5,21 @@ Tests for password hashing, JWT tokens, and API key functions.
 These are all pure functions with no external dependencies (no DB, no Redis).
 """
 
-import pytest
 from datetime import timedelta
 
+import pytest
+
 from app.core.security import (
-    hash_password,
-    verify_password,
     create_access_token,
-    verify_access_token,
     generate_api_key,
     hash_api_key,
+    hash_password,
+    verify_access_token,
+    verify_password,
 )
 
-
 # ============ Password Hashing Tests ============
+
 
 class TestPasswordHashing:
     """Tests for bcrypt password hashing and verification."""
@@ -55,6 +56,7 @@ class TestPasswordHashing:
 
 # ============ JWT Token Tests ============
 
+
 class TestJWTTokens:
     """Tests for JWT creation and verification."""
 
@@ -75,8 +77,7 @@ class TestJWTTokens:
     def test_token_with_custom_expiration(self):
         """Token with custom expiration should still verify."""
         token = create_access_token(
-            {"sub": "user-789"},
-            expires_delta=timedelta(hours=2)
+            {"sub": "user-789"}, expires_delta=timedelta(hours=2)
         )
         payload = verify_access_token(token)
         assert payload["sub"] == "user-789"
@@ -96,6 +97,7 @@ class TestJWTTokens:
 
 
 # ============ API Key Tests ============
+
 
 class TestAPIKeys:
     """Tests for API key generation and hashing."""

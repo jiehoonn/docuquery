@@ -24,6 +24,7 @@ Usage Quotas (PRD requirements):
 """
 
 from datetime import datetime
+
 from app.services.cache import get_redis_client
 
 # ============ Configuration ============
@@ -36,6 +37,7 @@ STORAGE_LIMIT_MB = 100
 
 
 # ============ Rate Limiting ============
+
 
 async def check_rate_limit(tenant_id: str) -> dict:
     """

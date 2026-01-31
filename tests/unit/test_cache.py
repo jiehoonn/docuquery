@@ -5,9 +5,11 @@ Tests for the cache key generation (pure function, no mocks needed)
 and the cache get/set operations (mocked Redis).
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from app.services.cache import get_cache_key, get_cached_answer, cache_answer
+
+from app.services.cache import cache_answer, get_cache_key, get_cached_answer
 
 
 class TestCacheKey:

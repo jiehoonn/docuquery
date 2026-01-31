@@ -32,7 +32,7 @@ from app.api.v1.usage import router as usage_router
 app = FastAPI(
     title="DocuQuery API",
     description="Multi-tenant document Q&A platform powered by RAG",
-    version="0.1.0"
+    version="0.1.0",
 )
 
 # Register the auth router with a URL prefix

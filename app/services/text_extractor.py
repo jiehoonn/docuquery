@@ -1,21 +1,22 @@
 """
-  app/services/text_extractor.py - Text Extraction Service
+app/services/text_extractor.py - Text Extraction Service
 
-  Extracts plain text from various document formats (PDF, DOCX, TXT).                                             
-  This is the first step in the document processing pipeline.
+Extracts plain text from various document formats (PDF, DOCX, TXT).
+This is the first step in the document processing pipeline.
 
-  Pipeline: Extract Text → Chunk → Embed → Store in Qdrant
-            ^^^^^^^^^^^^
-            (this file)
+Pipeline: Extract Text → Chunk → Embed → Store in Qdrant
+          ^^^^^^^^^^^^
+          (this file)
 
-  Supported formats:
-  - PDF: Uses PyPDF2 to read each page
-  - DOCX: Uses python-docx to read paragraphs
-  - TXT: Plain file read
-  """
+Supported formats:
+- PDF: Uses PyPDF2 to read each page
+- DOCX: Uses python-docx to read paragraphs
+- TXT: Plain file read
+"""
 
-from PyPDF2 import PdfReader
 from docx import Document
+from PyPDF2 import PdfReader
+
 
 def extract_from_pdf(file_path: str) -> str:
     """
@@ -25,11 +26,11 @@ def extract_from_pdf(file_path: str) -> str:
         file_path: Path to the PDF file
 
     Returns:
-        All text content from the PDF concatenated together                                                
+        All text content from the PDF concatenated together
 
     Note:
-        PyPDF2 extracts text page by page. Some PDFs (especially scanned                                     
-        documents) may not have extractable text - they would need OCR.                                         
+        PyPDF2 extracts text page by page. Some PDFs (especially scanned
+        documents) may not have extractable text - they would need OCR.
     """
 
     res = ""
@@ -39,6 +40,7 @@ def extract_from_pdf(file_path: str) -> str:
     for page in reader.pages:
         res += page.extract_text()
     return res
+
 
 def extract_from_docx(file_path: str) -> str:
     """
@@ -60,6 +62,7 @@ def extract_from_docx(file_path: str) -> str:
     # Join them with new lines to preserve document structure
     return "\n".join([paragraph.text for paragraph in doc.paragraphs])
 
+
 def extract_from_txt(file_path: str) -> str:
     """
     Extract text from a plain text file.
@@ -73,19 +76,20 @@ def extract_from_txt(file_path: str) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
 
+
 def extract_text(file_path: str) -> str:
     """
     Extract text from a file based on its extension.
 
-    This is the main entry point for text extraction. It determines                                             
-    the file type and calls the appropriate extraction function.                                               
+    This is the main entry point for text extraction. It determines
+    the file type and calls the appropriate extraction function.
 
     Args:
         file_path: Path to the document file
 
     Returns:
         Extracted text content as a string
-                                                        
+
     Raises:
         ValueError: If the file type is not supported
 

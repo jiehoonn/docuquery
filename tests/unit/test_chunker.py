@@ -6,6 +6,7 @@ chunk_text() is a pure function with zero dependencies — ideal for unit testin
 """
 
 import pytest
+
 from app.services.chunker import chunk_text
 
 

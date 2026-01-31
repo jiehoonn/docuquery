@@ -25,6 +25,7 @@ TODO(cloud): Consider abstracting the LLM provider behind an interface
 """
 
 from google import genai
+
 from app.core.config import settings
 
 # Create Gemini client at module level (reused across all requests)
@@ -108,9 +109,6 @@ async def generate_answer(chunks: list[str], question: str) -> str:
     """
     prompt = build_prompt(chunks, question)
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt
-    )
+    response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
 
     return response.text

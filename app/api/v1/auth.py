@@ -17,21 +17,21 @@ Two authentication methods are supported:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.session import get_db
-from app.db.models import User, Organization
 from app.core.security import (
-    hash_password,
-    verify_password,
     create_access_token,
-    verify_access_token,
     generate_api_key,
-    hash_api_key
+    hash_api_key,
+    hash_password,
+    verify_access_token,
+    verify_password,
 )
+from app.db.models import Organization, User
+from app.db.session import get_db
 
 # Create a router with a prefix - all routes here will start with /auth
 # tags=["auth"] groups these endpoints together in the API docs
@@ -51,8 +51,10 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 # Pydantic models define the shape of request bodies and responses.
 # They provide automatic validation and generate API documentation.
 
+
 class RegisterRequest(BaseModel):
     """Data required to register a new account."""
+
     email: EmailStr  # EmailStr validates proper email format
     password: str
     organization_name: str
@@ -60,18 +62,21 @@ class RegisterRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     """Data required to log in."""
+
     email: EmailStr
     password: str
 
 
 class TokenResponse(BaseModel):
     """Response containing a JWT token (for login)."""
+
     access_token: str
     token_type: str = "bearer"  # Always "bearer" for JWT
 
 
 class RegisterResponse(BaseModel):
     """Response for registration (includes API key shown only once)."""
+
     access_token: str
     token_type: str = "bearer"
     api_key: str  # Only returned once - user must save it!
@@ -79,6 +84,7 @@ class RegisterResponse(BaseModel):
 
 class ApiKeyResponse(BaseModel):
     """Response when generating a new API key."""
+
     api_key: str
     message: str = "Save this key - it cannot be retrieved again"
 
@@ -87,10 +93,11 @@ class ApiKeyResponse(BaseModel):
 # Dependencies are reusable functions that FastAPI injects into endpoints.
 # get_current_user validates the JWT and returns the authenticated user.
 
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     api_key: str = Depends(api_key_header),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     """
     Dependency that authenticates a user via API key OR JWT token.
@@ -117,23 +124,27 @@ async def get_current_user(
         # 1. Hash the api_key using hash_api_key() (already imported)
         hashed_key = hash_api_key(api_key)
         # 2. Look up the Organization where api_key_hash matches
-        result = await db.execute(select(Organization).where(Organization.api_key_hash == hashed_key))
+        result = await db.execute(
+            select(Organization).where(Organization.api_key_hash == hashed_key)
+        )
         org = result.scalar_one_or_none()
         # 3. If no org found, raise 401 "Invalid API key"
-        if not org:   
+        if not org:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid Organization API Key"
+                detail="Invalid Organization API Key",
             )
         # 4. Find a User that belongs to this organization
         else:
-            result = await db.execute(select(User).where(User.organization_id == org.id))
+            result = await db.execute(
+                select(User).where(User.organization_id == org.id)
+            )
             user = result.scalar_one_or_none()
-         # 5. If no user found, raise 401 "No user found for this API key"
-            if not user:   
+            # 5. If no user found, raise 401 "No user found for this API key"
+            if not user:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="No user found for this API key"
+                    detail="No user found for this API key",
                 )
         # 6. Return the user
         return user
@@ -153,14 +164,12 @@ async def get_current_user(
 
             if not user_id:
                 raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid token"
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
                 )
         except ValueError:
             # verify_access_token raises ValueError for invalid tokens
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )
 
         # Fetch the user from the database
@@ -169,8 +178,7 @@ async def get_current_user(
 
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
             )
 
         return user
@@ -178,11 +186,12 @@ async def get_current_user(
     # ── No credentials provided ──
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Authentication required. Provide either X-API-Key header or Authorization: Bearer <token>"
+        detail="Authentication required. Provide either X-API-Key header or Authorization: Bearer <token>",
     )
 
 
 # ============ Endpoints ============
+
 
 @router.post("/register", response_model=RegisterResponse)
 async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db)):
@@ -213,8 +222,7 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
     result = await db.execute(select(User).where(User.email == request.email))
     if result.scalar_one_or_none():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
     # 2. Create Organization
@@ -275,16 +283,14 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not user:
         # Don't reveal that the email doesn't exist
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
     # 2. Verify password
     if not verify_password(request.password, user.password_hash):
         # Same error message as above (security best practice)
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
     # 3. Create and return token
@@ -295,7 +301,7 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
 @router.get("/apikey", response_model=ApiKeyResponse)
 async def regenerate_api_key(
     current_user: User = Depends(get_current_user),  # Requires authentication!
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Generate a new API key for the current user's organization.
@@ -320,8 +326,7 @@ async def regenerate_api_key(
 
     if not org:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Organization not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
         )
 
     # Generate new API key and update the hash
