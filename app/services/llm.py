@@ -28,9 +28,17 @@ from google import genai
 
 from app.core.config import settings
 
-# Create Gemini client at module level (reused across all requests)
-# The API key is loaded from environment variables via settings
-client = genai.Client(api_key=settings.gemini_api_key)
+# Lazy-initialized Gemini client (created on first use, not at import time)
+# This prevents import-time errors when GEMINI_API_KEY isn't set (e.g., in CI tests)
+_client = None
+
+
+def _get_client() -> genai.Client:
+    """Get or create the Gemini client (lazy singleton)."""
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=settings.gemini_api_key)
+    return _client
 
 
 def build_prompt(chunks: list[str], question: str) -> str:
@@ -109,6 +117,7 @@ async def generate_answer(chunks: list[str], question: str) -> str:
     """
     prompt = build_prompt(chunks, question)
 
+    client = _get_client()
     response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
 
     return response.text
