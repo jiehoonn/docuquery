@@ -24,6 +24,7 @@ from app.api.v1.auth import get_current_user
 from app.db.models import Document, User
 from app.db.session import get_db
 from app.services.processor import process_document
+from app.services.qdrant import delete_document_vectors
 from app.services.storage import delete_file, get_file_extension, save_file
 
 # Create router - all routes will be prefixed with /documents
@@ -245,10 +246,9 @@ async def delete_document(
     Delete a document.
 
     This will:
-    1. Delete the file from storage
-    2. Delete the database record
-
-    Note: This does NOT delete vectors from Qdrant (will be added later).
+    1. Delete vectors from Qdrant
+    2. Delete the file from storage
+    3. Delete the database record
 
     Args:
         document_id: The UUID of the document to delete
@@ -272,6 +272,12 @@ async def delete_document(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Document not found"
         )
+
+    # Delete vectors from Qdrant (must happen before DB delete so we still have tenant_id)
+    delete_document_vectors(
+        tenant_id=str(document.tenant_id),
+        document_id=str(document.id),
+    )
 
     # Delete file from storage
     delete_file(document.file_path)
