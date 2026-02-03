@@ -21,7 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth import get_current_user
-from app.db.models import Document, User
+from app.db.models import Document, Organization, User
 from app.db.session import get_db
 from app.services.processor import process_document
 from app.services.qdrant import delete_document_vectors
@@ -161,7 +161,16 @@ async def upload_document(
     await db.commit()
     await db.refresh(document)  # Refresh to get any default values
 
-    # 6. Process the document inline (extract text, chunk, embed, store in Qdrant)
+    # 6. Update organization storage usage
+    result_org = await db.execute(
+        select(Organization).where(Organization.id == current_user.organization_id)
+    )
+    org = result_org.scalar_one_or_none()
+    if org:
+        org.storage_used_mb += max(1, file_size // (1024 * 1024))
+        await db.commit()
+
+    # 7. Process the document inline (extract text, chunk, embed, store in Qdrant)
     # TODO(cloud): Replace inline processing with async SQS + Lambda/ECS worker.
     #   - After creating the document record, send a message to SQS queue
     #     with the document_id and tenant_id
@@ -281,6 +290,16 @@ async def delete_document(
 
     # Delete file from storage
     delete_file(document.file_path)
+
+    # Update organization storage usage
+    result_org = await db.execute(
+        select(Organization).where(Organization.id == current_user.organization_id)
+    )
+    org = result_org.scalar_one_or_none()
+    if org:
+        size_mb = max(1, document.file_size_bytes // (1024 * 1024))
+        org.storage_used_mb = max(0, org.storage_used_mb - size_mb)
+        await db.commit()
 
     # Delete from database
     await db.delete(document)
