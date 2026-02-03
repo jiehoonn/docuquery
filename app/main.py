@@ -13,6 +13,7 @@ API documentation is auto-generated at http://localhost:8000/docs
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 # Import the auth router which contains all authentication-related endpoints
 # We rename it to 'auth_router' for clarity when registering it below
@@ -33,6 +34,16 @@ app = FastAPI(
     title="DocuQuery API",
     description="Multi-tenant document Q&A platform powered by RAG",
     version="0.1.0",
+)
+
+# Configure CORS (Cross-Origin Resource Sharing) middleware
+# This allows the API to be accessed from web applications hosted on different domains
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Register the auth router with a URL prefix
