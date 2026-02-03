@@ -19,6 +19,15 @@ services:
       - redis
       - qdrant
 
+  # ============ DocuQuery Frontend ============
+  # Next.js application, built from frontend/Dockerfile
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - app
+
   # ============ Infrastructure Services ============
   postgres:
     image: postgres:15
