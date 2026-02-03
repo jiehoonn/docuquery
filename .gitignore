@@ -26,3 +26,8 @@ qdrant_data/
 
 # Development uploads
 uploads/
+
+# Terraform
+.terraform/
+*.tfvars
+!*.tfvars.example
