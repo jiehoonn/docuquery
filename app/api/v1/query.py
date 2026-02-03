@@ -23,10 +23,13 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.auth import get_current_user
 from app.core.multi_tenant import check_rate_limit
-from app.db.models import User
+from app.db.models import Organization, User
+from app.db.session import get_db
 from app.services.rag import query_documents
 
 # Create router - all routes will be prefixed with /query
@@ -71,7 +74,11 @@ class QueryResponse(BaseModel):
 
 
 @router.post("", response_model=QueryResponse)
-async def query(request: QueryRequest, current_user: User = Depends(get_current_user)):
+async def query(
+    request: QueryRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
     Query documents using natural language.
 
@@ -128,5 +135,14 @@ async def query(request: QueryRequest, current_user: User = Depends(get_current_
         document_ids=request.document_ids,
     )
 
-    # 3. Return the result (FastAPI auto-serializes to QueryResponse)
+    # 4. Increment monthly query counter
+    result_org = await db.execute(
+        select(Organization).where(Organization.id == current_user.organization_id)
+    )
+    org = result_org.scalar_one_or_none()
+    if org:
+        org.queries_this_month += 1
+        await db.commit()
+
+    # 5. Return the result (FastAPI auto-serializes to QueryResponse)
     return result
