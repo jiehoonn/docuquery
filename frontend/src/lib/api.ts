@@ -17,8 +17,9 @@ async function fetchAPI(path: string, options: RequestInit = {}) {
         ...options,
         headers,
     });
-    // 3. If response is 401 -> clearToken() and redirect to /login
-    if (response.status === 401) {
+    // 3. If response is 401 on a protected route -> clearToken() and redirect to /login
+    //    Skip for auth endpoints where 401 means "wrong credentials", not "expired token"
+    if (response.status === 401 && !path.startsWith("/api/v1/auth")) {
         clearToken();
         window.location.href = "/login";
         throw new Error("Unauthorized");
@@ -36,6 +37,7 @@ export async function login(email: string, password: string) {
         },
         body: JSON.stringify({ email, password }),
     });
+    if (!res.ok) throw new Error("Login failed");
     return res.json();
 }
 
@@ -48,6 +50,7 @@ export async function register(email: string, password: string, orgName: string)
         },
         body: JSON.stringify({ email, password, organization_name: orgName }),
     });
+    if (!res.ok) throw new Error("Registration failed");
     return res.json();
 }
 
